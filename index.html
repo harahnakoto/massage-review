@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>美體評價小幫手😏</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c14;
+    --bg2: #13101c;
+    --bg3: #1c1828;
+    --card: #181424;
+    --border: rgba(180,160,255,0.1);
+    --border2: rgba(180,160,255,0.2);
+    --text: #ede8f8;
+    --text2: #9d8fc4;
+    --text3: #5a5070;
+    --gold: #b89af0;
+    --gold2: #d4bcff;
+    --green: #7ec8a0;
+    --green-bg: rgba(126,200,160,0.12);
+    --amber: #c4a05a;
+    --amber-bg: rgba(196,160,90,0.12);
+    --red: #c47a9a;
+    --red-bg: rgba(196,122,154,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg); }
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+
+  /* Header */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(14,12,20,0.94);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+    padding: 16px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-left { flex: 1; cursor: pointer; } /* 點擊標題可以暗號觸發登入 */
+  .header-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--gold2);
+    line-height: 1;
+  }
+  .header-sub { font-size: 11px; color: var(--text3); margin-top: 3px; letter-spacing: 0.05em; }
+
+  /* Sync Status UI */
+  .sync-container { font-size: 11px; text-align: right; }
+  .sync-status { color: var(--green); display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .sync-status.off { color: var(--text3); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .sync-dot.loading { animation: pulse 1s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    background: rgba(14,12,20,0.97);
+    backdrop-filter: blur(16px);
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    z-index: 100;
+  }
+  .nav-btn {
+    flex: 1; padding: 12px 4px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-size: 10px; font-family: 'Noto Sans TC', sans-serif;
+    transition: color 0.15s;
+  }
+  .nav-btn.active { color: var(--gold2); }
+  .nav-icon { font-size: 20px; line-height: 1; }
+
+  /* Pages */
+  .page { display: none; padding: 16px 16px 0; animation: fadeIn 0.2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .card-title { font-size: 14px; font-weight: 500; color: var(--text2); margin-bottom: 12px; letter-spacing: 0.03em; }
+
+  /* Therapist list card */
+  .therapist-card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .therapist-card:active { background: var(--bg3); border-color: var(--border2); }
+  .th-header { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,0.1);
+  }
+  .av0 { background: #1a1e2e; color: #7ea8e0; }
+  .av1 { background: #221a30; color: #c49af0; }
+  .av2 { background: #2a1a28; color: #e08ab8; }
+  .av3 { background: #1a2624; color: #7ec8b0; }
+  .av4 { background: #28201a; color: #e0b87a; }
+  .th-info { flex: 1; min-width: 0; }
+  .th-name { font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
+  .th-sub { font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rating-num { text-align: right; flex-shrink: 0; }
+  .big-num { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--gold2); line-height: 1; }
+  .stars-tiny { font-size: 11px; color: var(--gold); display: block; margin-top: 1px; }
+  .rev-ct { font-size: 10px; color: var(--text3); }
+
+  .meta-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .pill {
+    font-size: 11px; padding: 3px 9px; border-radius: 99px;
+    border: 0.5px solid var(--border); color: var(--text2); background: var(--bg3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+  }
+  .pill.p-price { border-color: rgba(212,168,67,0.3); color: var(--gold); background: rgba(212,168,67,0.08); }
+  .pill.p-contact { border-color: rgba(90,112,184,0.3); color: #8aabdc; background: rgba(90,112,184,0.08); }
+
+  /* 管理員專用刪除按鈕樣式 */
+  .admin-delete-btn {
+    display: none; position: absolute; top: 12px; right: 12px;
+    background: var(--red-bg); color: var(--red); border: 0.5px solid rgba(184,80,80,0.4);
+    border-radius: var(--radius-sm); padding: 4px 8px; font-size: 11px; cursor: pointer; z-index: 10;
+  }
+  .admin-delete-btn:active { transform: scale(0.92); background: rgba(184,80,80,0.25); }
+  body.admin-mode .admin-delete-btn { display: block; }
+
+  /* Detail view */
+  .detail-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .back-btn {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    color: var(--text2); font-size: 13px; cursor: pointer; flex-shrink: 0;
+  }
+  .detail-name { font-size: 18px; font-weight: 700; }
+
+  .rating-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .hero-num { font-family: 'DM Serif Display', serif; font-size: 48px; color: var(--gold2); line-height: 1; }
+  .hero-right { flex: 1; }
+  .hero-stars { color: var(--gold); font-size: 18px; margin-bottom: 4px; }
+  .hero-ct { font-size: 12px; color: var(--text3); }
+
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; color: var(--text3); }
+  .bar-bg { flex: 1; height: 5px; border-radius: 3px; background: var(--bg3); overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.5s ease; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .info-lbl { font-size: 10px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .info-val { font-size: 12px; color: var(--text); line-height: 1.5; }
+
+  /* Reviews */
+  .section-title { font-size: 13px; font-weight: 500; color: var(--text2); margin: 16px 0 10px; letter-spacing: 0.04em; }
+  .review-card {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 13px 14px; margin-bottom: 8px;
+    position: relative;
+  }
+  .rev-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 7px; padding-right: 45px; }
+  .rev-name { font-size: 13px; font-weight: 500; }
+  .rev-date { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .sent-tag { font-size: 11px; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+  .sent-good { background: var(--green-bg); color: var(--green); border: 0.5px solid rgba(90,158,111,0.3); }
+  .sent-mid { background: var(--amber-bg); color: #d48a3a; border: 0.5px solid rgba(196,122,42,0.3); }
+  .sent-bad { background: var(--red-bg); color: var(--red); border: 0.5px solid rgba(184,80,80,0.3); }
+  .rev-stars { color: var(--gold); font-size: 13px; margin-bottom: 6px; }
+  .rev-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 14px; }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* Form styles */
+  .form-label { font-size: 13px; color: var(--text2); margin-bottom: 7px; display: block; }
+  .form-label span { color: var(--red); margin-left: 2px; }
+  input[type="text"], input[type="tel"], input[type="password"], textarea, select {
+    width: 100%; background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 11px 13px;
+    color: var(--text); font-size: 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    margin-bottom: 14px; outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  select option { background: var(--bg2); }
+  ::placeholder { color: var(--text3); }
+
+  /* Star rating */
+  .star-input { display: flex; gap: 8px; margin-bottom: 14px; }
+  .star-btn {
+    font-size: 32px; background: none; border: none; cursor: pointer;
+    color: var(--text3); transition: color 0.1s, transform 0.1s; padding: 0; line-height: 1;
+  }
+  .star-btn.lit { color: var(--gold); }
+  .star-btn:active { transform: scale(1.2); }
+
+  /* Sentiment buttons */
+  .sent-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .sent-btn {
+    background: var(--bg3); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 12px 6px;
+    text-align: center; cursor: pointer; font-size: 12px; color: var(--text2);
+    transition: all 0.15s; font-family: 'Noto Sans TC', sans-serif;
+  }
+  .sent-btn .sicon { font-size: 22px; display: block; margin-bottom: 4px; }
+  .sent-btn.sel-good { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+  .sent-btn.sel-mid { border-color: var(--amber); background: var(--amber-bg); color: #d48a3a; }
+  .sent-btn.sel-bad { border-color: var(--red); background: var(--red-bg); color: var(--red); }
+
+  /* Therapist picker */
+  .th-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .th-pick-btn {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 10px;
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 13px; color: var(--text); transition: all 0.15s;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .th-pick-btn.sel { border-color: var(--gold); background: rgba(212,168,67,0.08); color: var(--gold2); }
+  .th-pick-btn .mini-av {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%; padding: 15px;
+    background: var(--gold);
+    color: #0e0a1e;
+    border: none; border-radius: var(--radius);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans TC', sans-serif;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.04em;
+  }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--card); border: 0.5px solid var(--border2);
+    border-radius: var(--radius); padding: 12px 20px;
+    font-size: 13px; color: var(--text);
+    opacity: 0; transition: all 0.3s; z-index: 200;
+    max-width: 320px; text-align: center; pointer-events: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok { border-color: rgba(90,158,111,0.4); color: var(--green); }
+  .toast.err { border-color: rgba(184,80,80,0.4); color: var(--red); }
+
+  /* Write review shortcut */
+  .write-for-btn {
+    width: 100%; margin-top: 14px; padding: 13px;
+    background: rgba(212,168,67,0.08); border: 0.5px solid rgba(212,168,67,0.3);
+    border-radius: var(--radius); color: var(--gold);
+    font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .write-for-btn:active { background: rgba(212,168,67,0.15); }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(14,10,30,0.3); border-top-color: #0e0a1e;
+    border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .divider { height: 0.5px; background: var(--border); margin: 14px 0; }
+
+  /* Count badge */
+  .count-badge {
+    display: inline-block; background: var(--bg3);
+    border: 0.5px solid var(--border); border-radius: 99px;
+    font-size: 11px; color: var(--text3); padding: 2px 8px; margin-left: 6px;
+  }
+
+  /* Page title */
+  .page-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+
+  /* Filter row */
+  .filter-row { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    flex-shrink: 0; padding: 6px 13px; border-radius: 99px; font-size: 12px;
+    background: var(--bg3); border: 0.5px solid var(--border); color: var(--text2); cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
+  }
+  .filter-chip.active { background: rgba(212,168,67,0.12); border-color: rgba(212,168,67,0.4); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left" onclick="triggerAdminCheck()">
+    <div class="header-title">美體評價小幫手😏</div>
+    <div class="header-sub">BEAUTY & MASSAGE REVIEW · 透明公開 · 真實評價</div>
+  </div>
+  <div class="sync-container">
+    <div id="sync-status-ui" class="sync-status">
+      <span id="sync-dot" class="sync-dot loading"></span><span id="sync-status-text">系統連線中...</span>
+    </div>
+  </div>
+</div>
+
+<div style="background:rgba(180,150,255,0.07);border-bottom:0.5px solid rgba(180,150,255,0.2);padding:10px 20px;font-size:11.5px;color:var(--text2);line-height:1.7;text-align:center;">
+  本表單僅供資訊分享與交流，內容皆為網友自發性填寫，不代表本站立場。若有涉及人身攻擊之言論，管理員有權刪除。
+</div>
+
+<div id="page-list" class="page active">
+  <div class="filter-row" id="filter-row">
+    <button class="filter-chip active" onclick="setFilter('all', this)">全部</button>
+    <button class="filter-chip" onclick="setFilter('good', this)">✅ 好評居多</button>
+    <button class="filter-chip" onclick="setFilter('new', this)">🆕 最新新增</button>
+  </div>
+  <div id="therapist-list"></div>
+</div>
+
+<div id="page-detail" class="page">
+  <div class="detail-header">
+    <button class="back-btn" onclick="showPage('list')">← 返回</button>
+    <div id="detail-name" class="detail-name"></div>
+  </div>
+  <div id="detail-body"></div>
+</div>
+
+<div id="page-write" class="page">
+  <div class="page-title">寫評價</div>
+
+  <div class="card">
+    <div class="card-title">選擇師父 <span style="color:var(--red)">*</span></div>
+    <div class="th-picker" id="th-picker"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">整體評分 <span style="color:var(--red)">*</span></div>
+    <div class="star-input" id="star-input">
+      <button class="star-btn" data-v="1" onclick="setStar(1)">★</button>
+      <button class="star-btn" data-v="2" onclick="setStar(2)">★</button>
+      <button class="star-btn" data-v="3" onclick="setStar(3)">★</button>
+      <button class="star-btn" data-v="4" onclick="setStar(4)">★</button>
+      <button class="star-btn" data-v="5" onclick="setStar(5)">★</button>
+    </div>
+    <div class="card-title">評價類型 <span style="color:var(--red)">*</span></div>
+    <div class="sent-btns">
+      <button class="sent-btn" id="sb-good" onclick="setSentiment('good')"><span class="sicon">😊</span>好評</button>
+      <button class="sent-btn" id="sb-mid" onclick="setSentiment('mid')"><span class="sicon">😐</span>中評</button>
+      <button class="sent-btn" id="sb-bad" onclick="setSentiment('bad')"><span class="sicon">😞</span>負評</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💕 心得分享 <span style="color:var(--red)">*</span></div>
+    <textarea id="rev-text" placeholder="分享你的真實體驗：手法、力道、服務態度、環境衛生、CP值…"></textarea>
+
+    <label class="form-label">你的稱呼（可匿名）</label>
+    <input type="text" id="rev-name" placeholder="例：小明 / 匿名用戶">
+  </div>
+
+  <button class="submit-btn" id="write-submit" onclick="submitReview()">送出評價</button>
+</div>
+
+<div id="page-add" class="page">
+  <div class="page-title">新增師父</div>
+
+  <div class="card">
+    <label class="form-label">🛌 師傅稱呼或店名 <span>*</span></label>
+    <input type="text" id="add-name" placeholder="例：阿明師父 / 放鬆工作室">
+
+    <label class="form-label">🌏 服務地區 <span>*</span></label>
+    <input type="text" id="add-area" placeholder="例：台北大安區 / 新北板橋 / 可外出">
+
+    <label class="form-label">📳 預約方式與聯繫資訊 <span>*</span></label>
+    <input type="text" id="add-contact" placeholder="例：LINE: abc123 / IG: @xxx / 電話: 09XX-XXX-XXX">
+
+    <label class="form-label">💲 大概價位 <span>*</span></label>
+    <input type="text" id="add-price" placeholder="例：60分鐘 $800 / 90分鐘 $1200">
+
+    <label class="form-label">✨ 專長項目</label>
+    <input type="text" id="add-specialty" placeholder="例：深層按摩、運動放鬆、精油、頭部">
+
+    <label class="form-label">📝 補充說明</label>
+    <textarea id="add-note" placeholder="其他想分享的資訊，例如：環境、停車、預約方式說明…" style="min-height:70px;"></textarea>
+  </div>
+
+  <button class="submit-btn" id="add-submit" onclick="submitNewTherapist()">新增師父資料</button>
+</div>
+
+<div id="page-admin" class="page">
+  <div class="page-title">管理員後台登入</div>
+  <div class="card">
+    <label class="form-label">請輸入管理密碼</label>
+    <input type="password" id="admin-pass-input" placeholder="請輸入密碼">
+    <button class="submit-btn" onclick="verifyAdminPassword()">驗證登入</button>
+    <div id="admin-logout-zone" style="display:none; margin-top: 15px; text-align: center;">
+      <span style="color:var(--green); font-size:13px; display:block; margin-bottom:10px;">➔ 目前已處於管理員模式</span>
+      <button class="submit-btn" style="background:var(--red-bg); color:var(--red);" onclick="logoutAdmin()">登出管理員模式</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-list" onclick="showPage('list')">
+    <span class="nav-icon">🗂️</span>師父名單
+  </button>
+  <button class="nav-btn" id="nav-write" onclick="showPage('write')">
+    <span class="nav-icon">✏️</span>寫評價
+  </button>
+  <button class="nav-btn" id="nav-add" onclick="showPage('add')">
+    <span class="nav-icon">➕</span>新增師父
+  </button>
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// ── ⚙️ INTEGRATED FIREBASE CONFIG ──────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAiJZIKT0KVbeGQ356YTQekUVGEEY7X6w8",
+  authDomain: "massage-helper.firebaseapp.com",
+  projectId: "massage-helper",
+  databaseURL: "https://massage-helper-default-rtdb.firebaseio.com", 
+  storageBucket: "massage-helper.firebasestorage.app",
+  messagingSenderId: "884776702408",
+  appId: "1:884776702408:web:40e291f88e0c11f23db0fd",
+  measurementId: "G-N8LMV7NN88"
+};
+
+// 🔑 後台控制密碼設定
+const ADMIN_PASSWORD = 'admin888'; 
+
+// 初始化 Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const therapistsRef = ref(db, 'therapists_data');
+
+// ── Telegram Config ──────────────────────────────────────────────────
+const TG_TOKEN = '8680172832:AAErd17Vtw3BZoClagDpQ-1Q6ruAoP7CNmw';
+
+// ── Data State ───────────────────────────────────────────────────
+let therapists = [];
+let clickCount = 0;
+let currentOpenDetailId = null; // 記錄當前開啟的師傅細節 ID
+
+// ── 監聽 Firebase 資料即時同步 ───────────────────────────────────────
+onValue(therapistsRef, (snapshot) => {
+  const data = snapshot.val();
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-status-text');
+  
+  if (data) {
+    therapists = data;
+  } else {
+    therapists = [
+      { id:1, name:'測試師父', initials:'測', av:0, area:'測試地區', contact:'LINE: test123', price:'60分鐘 $999', booking:'測試預約方式', specialty:'測試專長', note:'這是測試用資料，可以刪除', reviews:[
+        { name:'測試用戶', stars:5, sentiment:'good', text:'這是一則測試評價，確認功能正常運成中 ✅', date:'2025-06-04' }
+      ]}
+    ];
+    set(therapistsRef, therapists);
+  }
+  
+  if(dot && txt) {
+    dot.className = 'sync-dot';
+    txt.textContent = '即時同步中';
+  }
+  
+  renderList();
+  renderPicker();
+  // 如果當前正好停留在某個師傅細節頁，資料同步時要同步重新刷新細節
+  if (currentOpenDetailId !== null) {
+    showDetail(currentOpenDetailId, true);
+  }
+}, (error) => {
+  console.error("Firebase 連線失敗:", error);
+  const txt = document.getElementById('sync-status-text');
+  if(txt) txt.textContent = '連線失敗';
+});
+
+// 將共用管理函式掛載到 window
+window.setFilter = setFilter;
+window.showPage = showPage;
+window.pickTh = pickTh;
+window.setStar = setStar;
+window.setSentiment = setSentiment;
+window.submitReview = submitReview;
+window.submitNewTherapist = submitNewTherapist;
+window.showDetail = showDetail;
+window.goWriteFor = goWriteFor;
+window.triggerAdminCheck = triggerAdminCheck;
+window.verifyAdminPassword = verifyAdminPassword;
+window.logoutAdmin = logoutAdmin;
+window.deleteTherapist = deleteTherapist;
+window.deleteReview = deleteReview;
+
+// ── 🔒 管理員邏輯 ──────────────────────────────────────────────────
+function triggerAdminCheck() {
+  clickCount++;
+  if (clickCount >= 5) {
+    clickCount = 0;
+    showPage('admin');
+    showToast('🔑 觸發隱藏暗號，進入後台驗證區', 'ok');
+  }
+}
+
+function verifyAdminPassword() {
+  const input = document.getElementById('admin-pass-input').value;
+  if (input === ADMIN_PASSWORD) {
+    document.body.classList.add('admin-mode');
+    document.getElementById('admin-logout-zone').style.display = 'block';
+    document.getElementById('admin-pass-input').value = '';
+    showToast('🔓 驗證成功！管理員模式已啟動', 'ok');
+    showPage('list');
+  } else {
+    showToast('❌ 密碼錯誤，拒絕存取', 'err');
+  }
+}
+
+function logoutAdmin() {
+  document.body.classList.remove('admin-mode');
+  document.getElementById('admin-logout-zone').style.display = 'none';
+  showToast('🔒 已安全登出管理員模式', '');
+  showPage('list');
+}
+
+// 🛑 刪除整個師傅
+async function deleteTherapist(id, name, event) {
+  if(event) event.stopPropagation(); // 阻止觸發卡片點擊
+  if (!confirm(`⚠️ 確定要徹底刪除師傅【${name}】及其所有評論嗎？此操作無法復原！`)) return;
+  
+  therapists = therapists.filter(t => t.id !== id);
+  await set(therapistsRef, therapists);
+  showToast(`🗑️ 已刪除師傅 ${name}`, 'ok');
+}
+
+// 🛑 刪除特定評論
+async function deleteReview(thId, reviewIndex) {
+  if (!confirm('⚠️ 確定要刪除這則不適合的評論嗎？')) return;
+  
+  const t = therapists.find(x => x.id === thId);
+  if (t && t.reviews) {
+    t.reviews.splice(reviewIndex, 1);
+    await set(therapistsRef, therapists);
+    showToast('🗑️ 評論已成功抹除', 'ok');
+  }
+}
+
+// ── State ────────────────────────────────────────────────────────
+let selectedTh = null, selectedStars = 0, selectedSent = null;
+let currentFilter = 'all';
+
+// ── Helpers ──────────────────────────────────────────────────────
+function avgStars(reviews) {
+  if (!reviews || !reviews.length) return 0;
+  return reviews.reduce((s,r) => s + r.stars, 0) / reviews.length;
+}
+function starsHTML(n, size) {
+  let s = '';
+  for (let i = 1; i <= 5; i++)
+    s += `<span style="color:${i<=n?'#d4a843':'#3a3530'};font-size:${size||14}px;">★</span>`;
+  return s;
+}
+function today() { return new Date().toISOString().slice(0,10); }
+function avClass(n) { return 'av'+((n||0)%5); }
+
+function filterProfanity(text) {
+  if (!text) return '無';
+  const bad = ['幹','幹x','垃圾店','死老太婆','死色狼','騙子','靠北'];
+  let t = text;
+  bad.forEach(w => { t = t.replace(new RegExp(w,'g'), '*'.repeat(w.length)); });
+  return t;
+}
+function formatPrice(p) {
+  if (!p) return '未填';
+  const s = String(p).trim();
+  return /^\d+$/.test(s) ? '$'+s+' 元' : s;
+}
+
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'toast show ' + (type||'');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+async function getTgChatId() { return '8535984487'; }
+async function sendTelegram(text) {
+  const chatId = await getTgChatId();
+  if (!chatId) return false;
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'HTML' })
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+// ── Pages ────────────────────────────────────────────────────────
+function showPage(name) {
+  currentOpenDetailId = null; // 切換頁面時重設細節狀態
+  ['list','detail','write','add','admin'].forEach(p => {
+    const target = document.getElementById('page-'+p);
+    if(target) target.classList.remove('active');
+  });
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const activePage = document.getElementById('page-'+name);
+  if(activePage) activePage.classList.add('active');
+  const navEl = document.getElementById('nav-'+name);
+  if (navEl) navEl.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+// ── Render list ──────────────────────────────────────────────────
+function renderList() {
+  const el = document.getElementById('therapist-list');
+  if (!el) return;
+  let list = [...therapists];
+  if (currentFilter === 'good') list = list.filter(t => avgStars(t.reviews || []) >= 4);
+  if (currentFilter === 'new') list = list.slice().reverse();
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div>沒有符合的師父資料</div>';
+    return;
+  }
+  el.innerHTML = list.map(t => {
+    const reviewsList = t.reviews || [];
+    const avg = avgStars(reviewsList);
+    const avgStr = avg > 0 ? avg.toFixed(1) : '—';
+    return `<div class="therapist-card" onclick="showDetail(${t.id})">
+      <button class="admin-delete-btn" onclick="deleteTherapist(${t.id}, '${t.name}', event)">🗑️ 刪除師傅</button>
+      
+      <div class="th-header">
+        <div class="avatar ${avClass(t.av)}">${t.initials}</div>
+        <div class="th-info">
+          <div class="th-name">${t.name}</div>
+          <div class="th-sub">${t.area} · ${t.specialty||'按摩'}</div>
+        </div>
+        <div class="rating-num">
+          <div class="big-num">${avgStr}</div>
+          <span class="stars-tiny">${avg>0?starsHTML(Math.round(avg),11):''}</span>
+          <div class="rev-ct">${reviewsList.length} 則評論</div>
+        </div>
+      </div>
+      <div class="meta-pills">
+        <span class="pill p-price">💰 ${t.price}</span>
+        <span class="pill p-contact">📱 ${t.contact}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPicker() {
+  const el = document.getElementById('th-picker');
+  if (!el) return;
+  el.innerHTML = therapists.map(t =>
+    `<button class="th-pick-btn" id="tp-${t.id}" onclick="pickTh(${t.id})">
+      <div class="mini-av ${avClass(t.av)}" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${t.initials}</div>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</span>
+    </button>`
+  ).join('');
+}
+
+function showDetail(id, isRefreshOnly = false) {
+  currentOpenDetailId = id;
+  const t = therapists.find(x => x.id === id);
+  if (!t) { showPage('list'); return; }
+  
+  document.getElementById('detail-name').textContent = t.name;
+  const reviewsList = t.reviews || [];
+  const avg = avgStars(reviewsList);
+  const total = reviewsList.length || 1;
+  const counts = [5,4,3,2,1].map(s => reviewsList.filter(r => r.stars === s).length);
+  const barRows = [5,4,3,2,1].map((s,i) =>
+    `<div class="bar-row">
+      <span style="min-width:10px;">${s}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(counts[i]/total*100)}%"></div></div>
+      <span style="min-width:20px;">${counts[i]}</span>
+    </div>`
+  ).join('');
+
+  const revHTML = reviewsList.length ? reviewsList.map((r, index) =>
+    `<div class="review-card">
+      <button class="admin-delete-btn" onclick="deleteReview(${t.id}, ${index})">🗑️ 刪除評論</button>
+      
+      <div class="rev-top">
+        <div>
+          <div class="rev-name">${r.name}</div>
+          <div class="rev-date">${r.date}</div>
+        </div>
+        <span class="sent-tag ${r.sentiment==='good'?'sent-good':r.sentiment==='mid'?'sent-mid':'sent-bad'}">${r.sentiment==='good'?'✅ 好評':r.sentiment==='mid'?'⚠️ 中評':'❌ 負評'}</span>
+      </div>
+      <div class="rev-stars">${starsHTML(r.stars,14)}</div>
+      <div class="rev-text">${r.text}</div>
+    </div>`
+  ).join('') : '<div class="empty-state"><div class="empty-icon">💬</div>還沒有評論<br>成為第一個評價的人！</div>';
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="card">
+      <div class="rating-hero">
+        <div class="hero-num">${avg>0?avg.toFixed(1):'—'}</div>
+        <div class="hero-right">
+          <div class="hero-stars">${avg>0?starsHTML(Math.round(avg),18):''}</div>
+          <div class="hero-ct">${reviewsList.length} 則評論</div>
+          <div style="margin-top:10px;">${barRows}</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="info-grid">
+        <div class="info-box"><div class="info-lbl">📳 預約聯繫</div><div class="info-val">${t.contact}</div></div>
+        <div class="info-box"><div class="info-lbl">💲 大概價位</div><div class="info-val">${t.price}</div></div>
+        <div class="info-box"><div class="info-lbl">🌏 服務地區</div><div class="info-val">${t.area}</div></div>
+        <div class="info-box"><div class="info-lbl">✨ 專長項目</div><div class="info-val">${t.specialty||'未填'}</div></div>
+      </div>
+      ${t.note ? `<div style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.7;">${t.note}</div>` : ''}
+    </div>
+    <div class="section-title">所有評論 <span class="count-badge">${reviewsList.length}</span></div>
+    ${revHTML}
+    <button class="write-for-btn" onclick="goWriteFor(${t.id})">✏️ 為 ${t.name} 寫評論</button>
+  `;
+  if (!isRefreshOnly) {
+    showPage('detail');
+    currentOpenDetailId = id; // 重新定格
+  }
+}
+
+function pickTh(id) {
+  selectedTh = id;
+  document.querySelectorAll('.th-pick-btn').forEach(b => b.classList.remove('sel'));
+  const el = document.getElementById('tp-'+id);
+  if (el) el.classList.add('sel');
+}
+function setStar(n) {
+  selectedStars = n;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('lit', parseInt(b.dataset.v) <= n);
+  });
+}
+function setSentiment(s) {
+  selectedSent = s;
+  ['good','mid','bad'].forEach(x => {
+    const btn = document.getElementById('sb-'+x);
+    if(btn) btn.className = 'sent-btn' + (x===s?' sel-'+x:'');
+  });
+}
+function goWriteFor(id) {
+  showPage('write');
+  setTimeout(() => pickTh(id), 50);
+}
+
+async function submitReview() {
+  const text = document.getElementById('rev-text').value.trim();
+  const name = document.getElementById('rev-name').value.trim() || '匿名用戶';
+  if (!selectedTh) { showToast('請選擇要評價的師父', 'err'); return; }
+  if (!selectedStars) { showToast('請給予星級評分', 'err'); return; }
+  if (!selectedSent) { showToast('請選擇評價類型', 'err'); return; }
+  if (!text) { showToast('請填寫心得分享內容', 'err'); return; }
+
+  const btn = document.getElementById('write-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>送出中…';
+
+  const t = therapists.find(x => x.id === selectedTh);
+  if (!t.reviews) t.reviews = [];
+  
+  const sentLabel = selectedSent==='good'?'✅ 好評':selectedSent==='mid'?'⚠️ 中評':'❌ 負評';
+  const starsStr = '★'.repeat(selectedStars)+'☆'.repeat(5-selectedStars);
+  const review = { name, stars: selectedStars, sentiment: selectedSent, text: filterProfanity(text), date: today() };
+  
+  t.reviews.unshift(review);
+  
+  await set(therapistsRef, therapists);
+
+  const msg =
+`📢 <b>【收到新按摩師傅評價通報】</b>
+───────────────────
+🛌 師傅稱呼或店名：${t.name}
+🌏 服務地區：${t.area}
+📳 聯繫資訊：${t.contact}
+💲 大概價位：${formatPrice(t.price)}
+───────────────────
+${sentLabel} | ${starsStr} (${selectedStars}/5)
+👤 評論者：${name}
+
+💕 心得分享 💕：
+${filterProfanity(text)}`;
+
+  await sendTelegram(msg);
+  showToast('✅ 評價已成功即時分享給所有人！', 'ok');
+
+  btn.disabled = false;
+  btn.innerHTML = '送出評價';
+  document.getElementById('rev-text').value = '';
+  document.getElementById('rev-name').value = '';
+  setStar(0); setSentiment(null); selectedTh = null;
+  document.querySelectorAll('.th-pick-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('.sent-btn').forEach(b => b.className = 'sent-btn');
+}
+
+async function submitNewTherapist() {
+  const name    = document.getElementById('add-name').value.trim();
+  const area    = document.getElementById('add-area').value.trim();
+  const contact = document.getElementById('add-contact').value.trim();
+  const price   = document.getElementById('add-price').value.trim();
+  const spec    = document.getElementById('add-specialty').value.trim();
+  const note    = document.getElementById('add-note').value.trim();
+
+  if (!name)    { showToast('請填寫師傅稱呼或店名', 'err'); return; }
+  if (!area)    { showToast('請填寫服務地區', 'err'); return; }
+  if (!contact) { showToast('請填寫預約方式與聯繫資訊', 'err'); return; }
+  if (!price)   { showToast('請填寫大概價位', 'err'); return; }
+
+  const btn = document.getElementById('add-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>新增中…';
+
+  const avColors = [0,1,2,3,4];
+  const newT = {
+    id: Date.now(),
+    name, initials: name.slice(0,2),
+    av: avColors[therapists.length % 5],
+    area, contact, price,
+    specialty: spec || '按摩',
+    note, reviews: []
+  };
+  
+  therapists.push(newT);
+  
+  await set(therapistsRef, therapists);
+
+  const msg =
+`🆕 <b>【新增師父資料】</b>
+───────────────────
+🛌 師傅稱呼或店名：${name}
+🌏 服務地區：${area}
+📳 預約方式與聯繫資訊：${contact}
+💲 大概價位：${formatPrice(price)}
+✨ 專長項目：${spec||'未填'}
+${note ? '📝 補充：'+note : ''}`;
+
+  await sendTelegram(msg);
+  showToast(`✅ ${name} 已成功新增，大家都能看到了！`, 'ok');
+
+  btn.disabled = false;
+  btn.innerHTML = '新增師父資料';
+  ['add-name','add-area','add-contact','add-price','add-specialty','add-note'].forEach(id => {
+    const inputEl = document.getElementById(id);
+    if(inputEl) inputEl.value = '';
+  });
+}
+</script>
+</body>
+</html>
